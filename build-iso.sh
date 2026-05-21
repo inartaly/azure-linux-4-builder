@@ -4,43 +4,29 @@ set -euo pipefail
 ARCH="${TARGET_ARCH:-x86_64}"
 
 echo "=== Azure Linux 4.0 Builder for $ARCH ==="
-echo "=== Installing Core Prerequisites ==="
 
-dnf -y update
-dnf -y install \
-  git \
-  curl \
-  python3 \
-  python3-pip \
-  mock \
-  rpm-build \
-  createrepo_c \
-  golang \
-  kiwi-cli \
-  make \
-  gcc \
-  tar \
-  xz \
-  unzip
-
-groupadd -f mock || true
-usermod -a -G mock root
-
-echo "=== Preparing Azure Linux 4.0 Workspace ==="
+# Ensure we are in the workspace
 mkdir -p /source/work
 cd /source/work
 
+# Clone if not present
 if [ ! -d "azurelinux" ]; then
     git clone https://github.com/microsoft/azurelinux.git
 fi
 
 cd azurelinux
 
-echo "=== Building Azure Linux 4.0 Image for $ARCH ==="
-# Updated path to the new script location
-bash imagebuilder.sh \
-  --config toolkit/resources/imageconfigs/full.json \
-  --arch "$ARCH" \
-  --output-dir /source/output
+echo "=== Preparing Build Environment ==="
+# The official way to prepare the environment
+make package-toolchain
+
+echo "=== Building Azure Linux 4.0 Image ==="
+# Using the standard make command to build the full image
+# This avoids path issues with scripts
+make image CONFIG=toolkit/resources/imageconfigs/full.json ARCH="$ARCH"
+
+echo "=== Locating Build Output ==="
+# Azure Linux usually outputs here
+find . -name "*.iso" -exec cp {} /source/output/ \;
 
 echo "=== Build Complete for $ARCH ==="
