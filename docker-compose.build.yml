@@ -1,0 +1,16 @@
+services:
+  azurelinux-builder:
+    image: fedora:40
+    container_name: azure-linux-builder
+    privileged: true
+    volumes:
+      - .:/source
+    working_dir: /source
+    environment:
+      - DNF_YUM_AUTO_ENABLE=1
+      - TARGET_ARCH=${TARGET_ARCH}
+    command: >
+      bash -c '
+        echo "=== Starting Azure Linux build for $TARGET_ARCH ===";
+        /bin/bash ./build-iso.sh;
+      '
